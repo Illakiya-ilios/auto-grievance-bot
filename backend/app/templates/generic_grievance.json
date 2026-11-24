@@ -1,0 +1,106 @@
+{
+  "title": "Automation analysis - Grievance Information",
+  "grievance_information": [
+    {
+      "key": "category",
+      "field": "Grievance category",
+      "automation_method": "LLM classification"
+    },
+    {
+      "key": "description",
+      "field": "Grievance description",
+      "automation_method": "LLM extraction and summarization"
+    },
+    {
+      "key": "related_date",
+      "field": "Date and time",
+      "automation_method": "Extract from conversation"
+    },
+    {
+      "key": "location",
+      "field": "Location",
+      "automation_method": "Extract from conversation"
+    },
+    {
+      "key": "recipient",
+      "field": "Responsible party",
+      "automation_method": "Entity extraction; use as grievance recipient"
+    },
+    {
+      "key": "affected_person",
+      "field": "Affected person",
+      "automation_method": "Identify from conversation"
+    },
+    {
+      "key": "impact",
+      "field": "Impact",
+      "automation_method": "LLM understanding and extraction",
+      "follow_up_required": true
+    },
+    {
+      "key": "previous_complaint_status",
+      "field": "Previous complaint status",
+      "automation_method": "Intent identification"
+    },
+    {
+      "key": "previous_response",
+      "field": "Previous response",
+      "automation_method": "Extract from conversation"
+    },
+    {
+      "key": "expected_resolution",
+      "field": "Expected resolution",
+      "automation_method": "Intent and requirement extraction",
+      "follow_up_required": true
+    },
+    {
+      "key": "supporting_evidence",
+      "field": "Supporting evidence",
+      "automation_method": "File upload and document processing"
+    },
+    {
+      "key": "additional_information",
+      "field": "Additional information",
+      "automation_method": "Extract remaining relevant details"
+    }
+  ],
+  "personal_information": [
+    {
+      "key": "name",
+      "field": "Name",
+      "automation_method": "Extract from conversation"
+    },
+    {
+      "key": "mobile_number",
+      "field": "Mobile number",
+      "automation_method": "Extract from conversation"
+    },
+    {
+      "key": "email",
+      "field": "Email",
+      "automation_method": "Extract from conversation"
+    },
+    {
+      "key": "submission_type",
+      "field": "Submission type",
+      "automation_method": "Identify from conversation"
+    }
+  ],
+  "conditional_fields": [
+    {
+      "key": "relationship",
+      "field": "Relationship",
+      "instruction": "Extract if mentioned; otherwise ask."
+    },
+    {
+      "key": "address",
+      "field": "Address",
+      "instruction": "Extract if mentioned or ask when necessary."
+    },
+    {
+      "key": "anonymous_submission",
+      "field": "Anonymous submission preference",
+      "instruction": "Identify the user's preference. Anonymous submissions are not supported; name and contact remain mandatory."
+    }
+  ]
+}
