@@ -93,6 +93,43 @@ def test_user_issue_text_takes_precedence_over_generated_description(monkeypatch
     assert main.conversations[conversation_id]["details"]["subject"] == "Chair is not working."
 
 
+def test_chat_preserves_details_from_registration_introduction(monkeypatch):
+    document = {"filename": "facility-guide.txt", "content": "Report damaged equipment to facilities."}
+    monkeypatch.setattr(main.store, "list_knowledge_documents", lambda: [document])
+    extracted_contexts = []
+
+    def extract_details(message):
+        if "My name is Kumar" in message:
+            return {"related_date": "Yesterday", "location": "Office", "description": ""}
+        return {"description": "My office laptop is burnt.", "related_date": "", "location": None}
+
+    def follow_up_question(description, details, documents=None):
+        extracted_contexts.append(dict(details))
+        return None
+
+    monkeypatch.setattr(main.llm, "extract_details", extract_details)
+    monkeypatch.setattr(main.llm, "follow_up_question", follow_up_question)
+    client = TestClient(main.app)
+
+    introduction = client.post("/api/chat", json={
+        "message": "I want to register a complaint. My name is Kumar. An issue happened yesterday at my office.",
+    })
+    conversation_id = introduction.json()["conversation_id"]
+    response = client.post("/api/chat", json={
+        "conversation_id": conversation_id,
+        "message": "My office laptop is burnt.",
+    })
+
+    details = main.conversations[conversation_id]["details"]
+    assert response.status_code == 200
+    assert details["name"] == "Kumar"
+    assert details["related_date"] == "Yesterday"
+    assert details["location"] == "Office"
+    assert details["description"] == "My office laptop is burnt."
+    assert "date" not in response.json()["message"].lower()
+    assert extracted_contexts[-1]["related_date"] == "Yesterday"
+
+
 def test_mobile_and_submission_fields_are_not_duplicated_as_supporting_information():
     details = {
         "name": "Nivetha",

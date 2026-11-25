@@ -50,16 +50,25 @@ def test_grievance_extraction_uses_external_generic_template():
         models=SimpleNamespace(
             generate_content=lambda *, model, contents, config=None: (
                 prompts.append(contents)
-                or SimpleNamespace(text='{"category":"Water service","location":"North Ward"}')
+                or SimpleNamespace(
+                    text='{"category":"Water service","location":"North Ward",'
+                    '"related_date":"yesterday","recipient":"","impact":null}'
+                )
             )
         )
     )
 
     extracted = service.extract_details("The water service is interrupted in North Ward.")
 
-    assert extracted == {"category": "Water service", "location": "North Ward"}
+    assert extracted == {
+        "category": "Water service",
+        "location": "North Ward",
+        "related_date": "yesterday",
+    }
     assert "Automation analysis - Grievance Information" in prompts[0]
     assert "Map the responsible party to the recipient field" in prompts[0]
+    assert "generic registration request" in prompts[0]
+    assert 'Preserve relative date expressions such as "yesterday"' in prompts[0]
 
 
 def test_general_answer_requires_gemini():

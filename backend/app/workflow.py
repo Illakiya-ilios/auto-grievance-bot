@@ -129,9 +129,21 @@ def extract_grievance_details(state: ChatState, config: RunnableConfig) -> ChatS
 	extracted: dict[str, str] = {}
 	configurable = config.get("configurable", {})
 	llm: GrievanceLLM | None = configurable.get("llm_service")
-	if llm and local_details.get("description") and state.get("awaiting") != "contact":
-		extracted = llm.extract_details(message)
-	state["details"] = {**extracted, **local_details}
+	message_details = re.sub(
+		r"^\s*(?:i(?:'d like| want) to (?:register|file|submit) (?:a )?(?:grievance|complaint)|(?:register|file) (?:a )?(?:grievance|complaint))[\s.!,:;-]*",
+		"",
+		message,
+		flags=re.I,
+	).strip(" \t\r\n.,!?;:-")
+	if llm and message_details.lower() not in {"", "please"} and state.get("awaiting") != "contact":
+		extracted = {
+			key: value.strip()
+			for key, value in llm.extract_details(message).items()
+			if isinstance(value, str) and value.strip()
+		}
+	state["details"] = {**local_details, **extracted}
+	if not details.get("description") and local_details.get("description"):
+		state["details"]["description"] = local_details["description"]
 	return state
 
 
