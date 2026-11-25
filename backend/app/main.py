@@ -608,7 +608,9 @@ def chat(request: ChatRequest) -> dict[str, Any]:
 
     previous_details = session.get("details", {})
     if route == "grievance":
-        merged_details = extract_local_details(message, previous_details)
+        merged_details = dict(previous_details)
+        if session.get("awaiting") == "contact":
+            merged_details = extract_local_details(message, previous_details)
     else:
         merged_details = dict(previous_details)
 

@@ -19,6 +19,39 @@ class TestLLM:
         return None
 
 
+class MultiFieldTestLLM(TestLLM):
+    def __init__(self):
+        self.extraction_messages = []
+        self.follow_up_details = []
+
+    def extract_details(self, message):
+        self.extraction_messages.append(message)
+        if "My name is Kumar" in message:
+            return {
+                "related_date": "Yesterday",
+                "location": "Office",
+                "description": "",
+                "category": None,
+            }
+        if "laptop is burnt" in message:
+            return {
+                "description": "My office laptop is burnt.",
+                "related_date": "",
+                "location": None,
+            }
+        if "happened today" in message:
+            return {
+                "related_date": "Today",
+                "location": "Warehouse",
+                "description": "",
+            }
+        return {}
+
+    def follow_up_question(self, description, details, documents=None):
+        self.follow_up_details.append(details)
+        return None
+
+
 class WorkflowWithTestLLM:
     def invoke(self, state, config=None):
         state = dict(state)
@@ -66,6 +99,71 @@ def test_registration_keeps_prior_details_and_asks_only_for_missing_fields():
     assert second["details"]["name"] == "Arun"
     assert "contact" in second["missing"]
     assert "description" not in second["missing"]
+
+
+def test_registration_extracts_multiple_fields_across_turns_without_losing_them():
+    llm = MultiFieldTestLLM()
+    config = {"configurable": {"thread_id": "multi-field-registration", "llm_service": llm}}
+    first = graph.invoke(
+        {
+            "message": "I want to register a complaint. My name is Kumar. The issue happened yesterday at my office.",
+            "intent": "registration",
+        },
+        config=config,
+    )
+
+    assert first["details"]["name"] == "Kumar"
+    assert first["details"]["related_date"] == "Yesterday"
+    assert first["details"]["location"] == "Office"
+    assert first["missing"][0] == "description"
+    assert llm.extraction_messages == [
+        "I want to register a complaint. My name is Kumar. The issue happened yesterday at my office."
+    ]
+
+    second = graph.invoke(
+        {
+            "message": "My office laptop is burnt.",
+            "intent": "registration",
+            "details": first["details"],
+            "awaiting": "description",
+        },
+        config=config,
+    )
+
+    assert second["details"]["name"] == "Kumar"
+    assert second["details"]["related_date"] == "Yesterday"
+    assert second["details"]["location"] == "Office"
+    assert second["details"]["description"] == "My office laptop is burnt."
+    assert "related_date" not in second["missing"]
+    assert second["missing"][0] == "contact"
+    assert "date" not in second["response"].lower()
+    assert llm.follow_up_details[-1]["related_date"] == "Yesterday"
+
+
+def test_registration_extraction_updates_corrections_without_clearing_other_details():
+    llm = MultiFieldTestLLM()
+    config = {"configurable": {"thread_id": "corrected-details", "llm_service": llm}}
+    first = graph.invoke(
+        {
+            "message": "My name is Kumar. It happened yesterday at my office.",
+            "intent": "registration",
+        },
+        config=config,
+    )
+
+    corrected = graph.invoke(
+        {
+            "message": "Correction: it happened today at the warehouse.",
+            "intent": "registration",
+            "details": first["details"],
+        },
+        config=config,
+    )
+
+    assert corrected["details"]["name"] == "Kumar"
+    assert corrected["details"]["related_date"] == "Today"
+    assert corrected["details"]["location"] == "Warehouse"
+    assert "category" not in corrected["details"]
 
 
 def test_registration_request_is_not_mistaken_for_the_complaint_description():

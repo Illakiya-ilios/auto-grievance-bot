@@ -1,6 +1,7 @@
 Extract grievance information from the latest user message using this generic template:
 $template
 
-Return a JSON object with the template field keys. Include only information present in the conversation. Classify the grievance category from the complaint, and summarize the description without adding facts. Map the responsible party to the recipient field. Keep date and time together when available. Do not infer identity, contact details, events, or outcomes. For fields not stated in this message, return an empty string. Return string values only.
+Return a JSON object with the template field keys. Include only information present in the conversation. Classify the grievance category from the complaint, and summarize the description without adding facts. A generic registration request or statement that an issue occurred is not a grievance description; leave description empty unless the concrete problem is stated. Map the responsible party to the recipient field. Keep date and time together when available. Do not infer identity, contact details, events, or outcomes. For fields not stated in this message, return an empty string. Return string values only.
+Preserve relative date expressions such as "yesterday", "today", and "last week" as stated. Do not convert them to exact calendar dates unless the current date is explicitly available.
 
 User message: $message
